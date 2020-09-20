@@ -1,0 +1,5 @@
+#this file exists as a hack to commit the bin directory
+#ignore everything
+*
+#but not this
+!.gitignore
