@@ -26,6 +26,7 @@ web_server_serve(web_server server)
     struct sockaddr_in client;
     socklen_t sin_size;
     pthread_t tid;*/
+    TCP_socket client_socket;
 
     TCP_socket_begin_listen(server->socket, 5);
     while(1)
@@ -40,12 +41,13 @@ web_server_serve(web_server server)
         c.socket_fd = new_socket;
         c.client = client;
         pthread_create(&tid, NULL, handle_http_request, (void*)&c);*/
-        handle_http_request(server->socket);
+        client_socket = await_client_connection(server->socket);
+        handle_http_request(client_socket);
     }
 }
 
-/*void*
-handle_http_request(void *client_data)
+void
+handle_http_request(TCP_socket client)
 {
     char *s = "HTTP/1.0 200 OK\r\n"
         "Server: curtisEServer\r\n\r\n"
@@ -60,7 +62,7 @@ handle_http_request(void *client_data)
     send(socket, s, strlen(s), 0);
     shutdown(socket, SHUT_RDWR);
     printf("thread end\n");
-}*/
+}
 
 void
 free_web_server(web_server server)

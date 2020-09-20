@@ -16,7 +16,7 @@ struct TCP_socket_struct
 };
 
 TCP_socket
-new_TCP_socket(char *hostname, char *port)
+new_TCP_server_socket(char *hostname, char *port)
 {
     TCP_socket new = smalloc(sizeof(*new), "new_TCP_socket");
     int yes=1, new_sfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -46,3 +46,8 @@ TCP_socket_begin_listen(TCP_socket socket, int backlog)
                 "to TCP_socket_begin_listen(TCP_socket,int).");
 }
 
+TCP_socket
+await_client_connection(TCP_socket server)
+{
+    int client_sfd;
+}
