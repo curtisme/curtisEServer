@@ -12,7 +12,7 @@
 struct TCP_socket_struct
 {
     int socket_fd;
-    struct scokaddr_in address;
+    struct sockaddr_in address;
 };
 
 TCP_socket
@@ -50,4 +50,36 @@ TCP_socket
 await_client_connection(TCP_socket server)
 {
     int client_sfd;
+    struct sockaddr_in client_addr;
+    TCP_socket client_socket;
+    socklen_t sin_size = sizeof(client_addr);
+
+    client_sfd = accept(server->socket_fd,
+            (struct sockaddr*)&client_addr, &sin_size);
+    if (client_sfd == -1)
+        fatal_error("Failed to accept TCP connection");
+    client_socket = smalloc(sizeof(*client_socket),
+            "await_client_connection");
+    client_socket->socket_fd = client_sfd;
+    client_socket->address = client_addr;
+    return client_socket;
+}
+
+int
+TCP_socket_recv(TCP_socket socket, char *buf, int buf_len)
+{
+    return recv(socket->socket_fd, buf, buf_len, 0);
+}
+
+void
+TCP_send_string(TCP_socket out, char *s)
+{
+    send(out->socket_fd, s, strlen(s), 0);
+}
+
+void
+free_TCP_socket(TCP_socket socket)
+{
+    shutdown(socket->socket_fd, SHUT_RDWR);
+    free(socket);
 }
