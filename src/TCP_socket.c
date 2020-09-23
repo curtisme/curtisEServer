@@ -38,6 +38,18 @@ new_TCP_server_socket(char *hostname, char *port)
     return new;
 }
 
+char
+*get_address(TCP_socket socket)
+{
+    return inet_ntoa(socket->address.sin_addr);
+}
+
+int
+get_port(TCP_socket socket)
+{
+    return ntohs(socket->address.sin_port);
+}
+
 void
 TCP_socket_begin_listen(TCP_socket socket, int backlog)
 {
@@ -65,16 +77,68 @@ await_client_connection(TCP_socket server)
     return client_socket;
 }
 
-int
-TCP_socket_recv(TCP_socket socket, char *buf, int buf_len)
+string
+TCP_socket_recv(TCP_socket socket, int buf_len)
 {
-    return recv(socket->socket_fd, buf, buf_len, 0);
+    string new = new_empty_string(buf_len);
+    int len = recv(socket->socket_fd, get_chars(new),
+            buf_len, 0);
+    set_length(new, len);
+    return new;
+}
+
+string
+TCP_socket_recvln(TCP_socket socket)
+{
+    char c,tmp;
+    int len, state = 0;
+    string line = new_empty_string(1);
+    while (state != 2)
+    {
+        len = recv(socket->socket_fd, &c, 1, 0);
+        if (len <= 0)
+            break;
+        switch(state)
+        {
+            case 0:
+                switch(c)
+                {
+                    case '\r':
+                        state = 1;
+                        break;
+                    case '\n':
+                        state = 2;
+                        break;
+                    default:
+                        append_char(line, c);
+                        break;
+                }
+                break;
+            case 1:
+                switch(c)
+                {
+                    case '\r':
+                        append_char(line, '\r');
+                        break;
+                    case '\n':
+                        state = 2;
+                        break;
+                    default:
+                        append_char(line, '\r');
+                        append_char(line, c);
+                        state = 0;
+                        break;
+                }
+                break;
+        }
+    }
+    return line;
 }
 
 void
-TCP_send_string(TCP_socket out, char *s)
+TCP_send_string(TCP_socket out, string s)
 {
-    send(out->socket_fd, s, strlen(s), 0);
+    send(out->socket_fd, get_chars(s), string_length(s), 0);
 }
 
 void
