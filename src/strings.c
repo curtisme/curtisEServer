@@ -59,6 +59,33 @@ string_compare(string s1, string s2) {
     return strcmp(s1->chars, s2->chars);
 }
 
+int
+string_is_empty(string s)
+{
+    return s->length < 1;
+}
+
+int
+string_ends_with(string s, char c)
+{
+    return s->length > 0 &&
+        s->chars[s->length-1] == c;
+}
+
+void
+string_concat(string s, string src)
+{
+    int src_len = src->length;
+    if (s->length + src_len >= s->capacity) {
+        s->capacity += src_len;
+        s->chars = srealloc(s->chars,
+                (s->capacity + 1)*sizeof(char),
+                "string_concat");
+    }
+    memcpy(s->chars + s->length, src->chars, src_len + 1);
+    s->length += src_len;
+}
+
 char
 *get_chars(string s) {
     return s->chars;
@@ -72,6 +99,19 @@ set_length(string s, int len)
     s->length = len;
     s->chars[len] = '\0';
     return s->length;
+}
+
+string
+read_to_string(FILE *fp)
+{
+    string out = new_empty_string(1);
+    char c = fgetc(fp);
+    while(!feof(fp))
+    {
+        append_char(out, c);
+        c = fgetc(fp);
+    }
+    return out;
 }
 
 void free_string(string s) {

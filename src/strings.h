@@ -9,9 +9,12 @@ void append_string(string, char*);
 void append_char(string, char);
 int string_length(string);
 int string_compare(string, string);
+int string_is_empty(string);
+int string_ends_with(string,char);
+void string_concat(string,string);
 char *get_chars(string);
 int set_length(string,int);
-string read_file_to_string(FILE*);
+string read_to_string(FILE*);
 void free_string(string);
 
 #endif

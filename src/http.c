@@ -91,6 +91,7 @@ http_parse_request(TCP_socket client)
     string firstline = TCP_socket_recvln(client);
     char *c = get_chars(firstline);
     enum parse_state state = request_line_start;
+    printf("%s\n", c);
     while(*c && state != done)
     {
         switch(state)
@@ -271,38 +272,42 @@ http_parse_request(TCP_socket client)
 http_response
 http_process_request(http_request request)
 {
+    FILE *fp;
+    string resource_path;
     http_response response = new_http_response();
-    response->status = new_string_from(BAD_REQUEST);
-    response->body = new_string_from(BAD_REQUEST_PAGE);
-    generate_full_response(response, 1);
-   /* FILE *fp;
-    string response_text = new_string_from("HTTP/1.0 ");
-    string resource_path = new_string_from("./");
-    append_string(resource_path, get_chars(request->uri));
-    if (string_ends_with(request->uri, '/') || 
-            string_is_empty(request->uri))
-        append_string(resource_path, "index.html");
-    fp = fopen(get_chars(resource_path));
+    int attach_body = 1;
+
     switch(request->method)
     {
         case INVALID:
-            append_string(response_text, BAD_REQUEST);
+        case POST:
+            response->status = new_string_from(BAD_REQUEST);
+            response->body = new_string_from(BAD_REQUEST_PAGE);
             break;
         case HEAD:
+            attach_body = 0;
         case GET:
+            resource_path = new_string_from("./");
+            append_string(resource_path, get_chars(request->uri));
+            if (string_ends_with(request->uri, '/') || 
+                    string_is_empty(request->uri))
+                append_string(resource_path, "index.html");
+            fp = fopen(get_chars(resource_path), "r");
             if (fp == NULL)
             {
-                append_string(response_text, NOT_FOUND);
-                append_string(response_text, "\r\n");
-                append_string(response_text, server_name);
+                response->status = new_string_from(NOT_FOUND);
+                response->body = new_string_from(NOT_FOUND_PAGE);
             }
             else
             {
-                append_string(response_text, OK);
-                append_string(response_text, "\r\n");
-                append_string(response_text, server_name);
+                response->status = new_string_from(OK);
+                response->body = read_to_string(fp);
+                fclose(fp);
             }
-    }*/
+            free_string(resource_path);
+            break;
+    }
+    generate_full_response(response, attach_body);
     return response;
 }
 
@@ -316,8 +321,7 @@ generate_full_response(http_response response, int attach_body)
     append_string(response->full_response,
             "Server: curtisEServer\r\n\r\n");
     if (attach_body)
-        append_string(response->full_response,
-                get_chars(response->body));
+        string_concat(response->full_response, response->body);
 }
 
 char

@@ -7,13 +7,13 @@ main(int argc, char **argv)
     web_server server;
     char *hostname, *port;
 
-    if (argc < 3)
-        printf("Please provide server hostname and port number.\n");
+    if (argc < 2)
+        printf("Please provide server port number.\n");
 
     else
     {
-        hostname = argv[1];
-        port = argv[2];
+        hostname = "";
+        port = argv[1];
         server = new_web_server(hostname, port);
         web_server_serve(server);
         printf("server closing...\n");
