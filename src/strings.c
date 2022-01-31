@@ -49,6 +49,13 @@ append_char(string s, char c) {
     s->chars[s->length] = '\0';
 }
 
+void
+null_terminate(string s)
+{
+    if (s->length >= 0)
+        s->chars[s->length] = '\0';
+}
+
 int
 string_length(string s) {
     return s->length;

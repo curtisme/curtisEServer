@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "http.h"
 #include "utils.h"
+#include "re.h"
 
 #define NOT_FOUND_PAGE "<!DOCTYPE html>\n<html>\n    <head>\n        " \
     "<title>404 n0t found!!1</title>\n" \
@@ -90,167 +91,28 @@ http_parse_request(TCP_socket client)
     http_request new = new_http_request();
     string firstline = TCP_socket_recvln(client);
     char *c = get_chars(firstline);
-    enum parse_state state = request_line_start;
     printf("%s\n", c);
-    while(*c && state != done)
+    regex re = new_regex("(GET|POST|HEAD) /(.*) HTTP/1\\.[01]", 0);
+    match m = regex_match(re, c);
+    if(m->is_match)
     {
-        switch(state)
+        switch(*get_chars(m->groups[1]))
         {
-            case request_line_start:
-                switch(*c)
-                {
-                    case 'G':
-                        state = method_G;
-                        break;
-                    case 'H':
-                        state = method_H;
-                        break;
-                    case 'P':
-                        state = method_P;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
+            case 'G':
+                new->method = GET;
                 break;
-            case method_G:
-                switch(*c)
-                {
-                    case 'E':
-                        state = method_GE;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
+            case 'P':
+                new->method = POST;
                 break;
-            case method_H:
-                switch(*c)
-                {
-                    case 'E':
-                        state = method_HE;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
+            case 'H':
+                new->method = HEAD;
                 break;
-            case method_P:
-                switch(*c)
-                {
-                    case 'O':
-                        state = method_PO;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
-            case method_GE:
-                switch(*c)
-                {
-                    case 'T':
-                        state = method_GET;
-                        new->method = GET;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
-            case method_HE:
-                switch(*c)
-                {
-                    case 'A':
-                        state = method_HEA;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
-            case method_PO:
-                switch(*c)
-                {
-                    case 'S':
-                        state = method_POS;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
-            case method_HEA:
-                switch(*c)
-                {
-                    case 'D':
-                        state = method_HEAD;
-                        new->method = HEAD;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
-            case method_POS:
-                switch(*c)
-                {
-                    case 'T':
-                        state = method_POST;
-                        new->method = POST;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
-            case method_GET:
-            case method_HEAD:
-            case method_POST:
-                switch(*c)
-                {
-                    case ' ':
-                        state = expecting_uri;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
+        }
 
-            case expecting_uri:
-                switch(*c)
-                {
-                    case '/':
-                        state = reading_uri;
-                        break;
-                    default:
-                        state = request_line_invalid;
-                        break;
-                }
-                break;
-            case reading_uri:
-                switch(*c)
-                {
-                    case ' ':
-                        state = done;
-                        break;
-                    default:
-                        append_char(new->uri, *c);
-                        break;
-                }
-                break;
-            default:
-                state = request_line_invalid;
-                break;
-        }
-        if (state == request_line_invalid)
-        {
-            new->method = INVALID;
-            break;
-        }
-        c++;
+        string_concat(new->uri, m->groups[2]);
     }
+    else
+        new->method = INVALID;
     switch(new->method)
     {
         case GET:
@@ -266,6 +128,9 @@ http_parse_request(TCP_socket client)
             new->method_string = new_string_from("INVALID");
             break;
     }
+    free_string(firstline);
+    free_regex(re);
+    free_match(m);
     return new;
 }
 

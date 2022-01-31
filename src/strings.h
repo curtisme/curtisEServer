@@ -7,6 +7,7 @@ string new_empty_string(int capacity);
 string new_string_from(char*);
 void append_string(string, char*);
 void append_char(string, char);
+void null_terminate(string);
 int string_length(string);
 int string_compare(string, string);
 int string_is_empty(string);
